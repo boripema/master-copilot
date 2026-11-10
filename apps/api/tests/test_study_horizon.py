@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from app.models import CanvasCourse, CanvasItem, Course
 from app.services.practice.scheduling import interval_for
-from app.services.study.horizon import HORIZON_SHARE, next_exam
+from app.services.study.horizon import HORIZON_SHARE, next_exam, upcoming_exams
 
 
 NU = datetime(2026, 9, 22, 12, 0, 0)
@@ -99,3 +99,19 @@ def test_no_exam_at_all_gives_none(db_session):
     db_session.commit()
 
     assert next_exam(db_session, "sso", now=NU) is None
+
+
+def test_a_course_with_two_exams_lists_both_earliest_first(db_session):
+    """HAII heeft een comprehensive exam én een essay exam; de pagina toont de
+    tweede als 'Daarna'."""
+    db_session.add(
+        Course(
+            slug="haii",
+            name="HAII",
+            exams=[{"name": "Essay", "date": "2026-12-16"}, {"name": "Comprehensive", "date": "2026-12-11"}],
+        )
+    )
+    db_session.commit()
+
+    assert [exam.name for exam in upcoming_exams(db_session, "haii", now=NU)] == ["Comprehensive", "Essay"]
+    assert next_exam(db_session, "haii", now=NU).name == "Comprehensive"

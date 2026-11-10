@@ -48,9 +48,17 @@ export function Overview({ prep }: { prep: ExamPrep }) {
           <>
             <span className="font-display text-5xl font-semibold tabular-nums text-ink-900">{exam.days_left}</span>
             <p className="text-sm text-ink-600">
-              {exam.days_left === 1 ? "dag" : "dagen"} tot het tentamen
+              {exam.days_left === 1 ? "dag" : "dagen"} tot {exam.name}
               <span className="block text-ink-400">{formatDay(exam.date)}</span>
             </p>
+            {prep.later_exams.map((later) => (
+              <p key={later.name} className="mt-2 text-sm text-ink-500">
+                Daarna: {later.name}
+                <span className="block text-ink-400">
+                  {formatDay(later.date)} ({later.days_left} d)
+                </span>
+              </p>
+            ))}
           </>
         ) : (
           <p className="text-sm text-ink-500">Geen tentamendatum bekend.</p>

@@ -824,6 +824,8 @@ export type ExamPrep = {
   /** Of er een `exams/voorbereiding.yml` is; zonder alleen de berekende blokken. */
   has_file: boolean;
   exam: StudyExam | null;
+  /** De tentamens na `exam`, vroegste eerst. */
+  later_exams: StudyExam[];
   facts: ExamFacts | null;
   total_points: number | null;
   minutes_per_point: number | null;

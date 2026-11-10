@@ -31,7 +31,7 @@ from app.services.canvas.client import strip_html
 from app.services.practice.exam_generation import squash
 from app.services.practice.exams import PREP_FILE, ExamProgress, exam_progress, is_scenario
 from app.services.practice.practice_exams import ExamLayout, NoBlueprint, course_blueprint, course_layout
-from app.services.study.horizon import Exam, next_exam
+from app.services.study.horizon import Exam, next_exam, upcoming_exams
 
 
 # Korter dan dit zegt een gevonden citaat niets: "exam" staat in elk college.
@@ -395,6 +395,8 @@ class ExamPrep:
     course_slug: str
     has_file: bool
     exam: Exam | None = None
+    # De tentamens na `exam`, voor de regel 'Daarna'.
+    later_exams: list[Exam] = field(default_factory=list)
     facts: ExamFacts | None = None
     total_points: float | None = None
     minutes_per_point: float | None = None
@@ -437,6 +439,7 @@ def build_exam_prep(
         course_slug=course_slug,
         has_file=prep is not None,
         exam=next_exam(db, course_slug, now=now),
+        later_exams=upcoming_exams(db, course_slug, now=now)[1:],
         facts=prep.exam if prep is not None else None,
         exam_sets=exam_progress(db, course_slug),
         scenarios=scenarios_by_pattern(db, course_slug),

@@ -55,6 +55,10 @@ def read_exam_prep(course_slug: Annotated[str, Query(min_length=1)], db: Session
         has_file=prep.has_file,
         exam=StudyExamRead(name=prep.exam.name, date=prep.exam.day, days_left=prep.exam.days_left, source=prep.exam.source)
         if prep.exam is not None else None,
+        later_exams=[
+            StudyExamRead(name=exam.name, date=exam.day, days_left=exam.days_left, source=exam.source)
+            for exam in prep.later_exams
+        ],
         facts=ExamFactsRead(**prep.facts.model_dump()) if prep.facts is not None else None,
         total_points=prep.total_points,
         minutes_per_point=prep.minutes_per_point,

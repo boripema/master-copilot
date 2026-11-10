@@ -49,12 +49,19 @@ def next_exam(db: Session, course_slug: str, *, now: datetime | None = None) -> 
     De agenda meldt het al wanneer die twee uiteenlopen; hier telt gewoon de
     vroegste, want de horizon moet de krapste zijn.
     """
+    exams = upcoming_exams(db, course_slug, now=now)
+    return exams[0] if exams else None
+
+
+def upcoming_exams(db: Session, course_slug: str, *, now: datetime | None = None) -> list[Exam]:
+    """Alle komende tentamens van dit vak, vroegste eerst. Een vak kan er twee
+    hebben (HAII: comprehensive en essay)."""
     now = now or utcnow()
     today = now.date()
 
     course = db.get(Course, course_slug)
     if course is None:
-        return None
+        return []
 
     kandidaten: list[Exam] = []
     for entry in course.exams or []:
@@ -77,9 +84,7 @@ def next_exam(db: Session, course_slug: str, *, now: datetime | None = None) -> 
             if day is not None and day >= today:
                 kandidaten.append(Exam(name=item.title, day=day, days_left=(day - today).days, source="canvas"))
 
-    if not kandidaten:
-        return None
-    return min(kandidaten, key=lambda exam: (exam.day, exam.source))
+    return sorted(kandidaten, key=lambda exam: (exam.day, exam.source))
 
 
 def horizon_days(db: Session, course_slug: str, *, now: datetime | None = None) -> int | None:
