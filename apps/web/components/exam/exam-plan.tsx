@@ -60,6 +60,9 @@ export function ExamPlan({ prep }: { prep: ExamPrep }) {
 
   const left = minutesLeft(prep.plan, prep.exam_sets, ticked);
   const done = prep.plan.filter((step) => stepDone(step, prep.exam_sets, ticked)).length;
+  // De balk telt tijd, niet stappen: een stap van anderhalf uur weegt zwaarder dan een kwartier.
+  const total = minutesLeft(prep.plan, prep.exam_sets, new Set());
+  const share = total > 0 ? (total - left) / total : done / Math.max(prep.plan.length, 1);
   let number = 0;
 
   return (
@@ -70,6 +73,16 @@ export function ExamPlan({ prep }: { prep: ExamPrep }) {
           {done} van {prep.plan.length} gedaan
           {left > 0 && <span> · nog {duration(left)}</span>}
         </p>
+      </div>
+      <div
+        className="mt-2 h-2 w-full rounded-full bg-ink-100"
+        role="progressbar"
+        aria-label="Voortgang tot het tentamen"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(share * 100)}
+      >
+        <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${share * 100}%` }} />
       </div>
       <p className="mt-0.5 max-w-3xl text-sm text-ink-500">
         In deze volgorde. Vink af wat je gedaan hebt; een oefententamen vinkt zichzelf af zodra elke vraag een poging
