@@ -91,7 +91,8 @@ export function ExamPlan({ prep }: { prep: ExamPrep }) {
 
       <div className="mt-3 space-y-5">
         {planDays(prep.plan).map(({ day, steps }) => (
-          <div key={day || "plan"}>
+          // Een dag kan twee keer voorkomen als er iets anders tussen staat; de eerste stap is uniek.
+          <div key={steps[0].id}>
             {day && (
               <h3 className="flex items-baseline gap-2 text-xs font-medium uppercase tracking-wide text-ink-500">
                 {day}
