@@ -466,3 +466,17 @@ def test_the_route_refuses_an_unknown_course(client):
     response = client.get("/api/exam-prep", params={"course_slug": "bestaat-niet"})
 
     assert response.status_code == 404
+
+
+def test_a_ticked_plan_step_survives_a_reload(client, db_session):
+    """Vinkjes stonden in de browser en verdwenen na 7 dagen (Safari)."""
+    db_session.add(Course(slug="tick-vak", name="Tick"))
+    db_session.commit()
+
+    assert client.put("/api/exam-prep/ticks/cards-1", params={"course_slug": "tick-vak"}).status_code == 204
+    assert client.put("/api/exam-prep/ticks/cards-1", params={"course_slug": "tick-vak"}).status_code == 204
+    assert client.get("/api/exam-prep", params={"course_slug": "tick-vak"}).json()["ticked"] == ["cards-1"]
+
+    assert client.delete("/api/exam-prep/ticks/cards-1", params={"course_slug": "tick-vak"}).status_code == 204
+    assert client.get("/api/exam-prep", params={"course_slug": "tick-vak"}).json()["ticked"] == []
+    assert client.put("/api/exam-prep/ticks/x", params={"course_slug": "bestaat-niet"}).status_code == 404

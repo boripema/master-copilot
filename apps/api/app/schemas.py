@@ -1070,6 +1070,7 @@ class ExamPrepRead(BaseModel):
     has_file: bool
     exam: StudyExamRead | None
     later_exams: list[StudyExamRead] = Field(default_factory=list)
+    ticked: list[str] = Field(default_factory=list)
     facts: ExamFactsRead | None
     total_points: float | None
     minutes_per_point: float | None

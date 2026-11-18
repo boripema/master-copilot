@@ -393,6 +393,14 @@ export async function fetchWeekExamples(courseSlug: string, week: number): Promi
   return handle(await fetch(`${API_BASE}/api/weeks/examples?${query}`, { cache: "no-store" }));
 }
 
+export async function setPlanTick(courseSlug: string, stepId: string, done: boolean): Promise<void> {
+  const query = new URLSearchParams({ course_slug: courseSlug });
+  const response = await fetch(`${API_BASE}/api/exam-prep/ticks/${encodeURIComponent(stepId)}?${query}`, {
+    method: done ? "PUT" : "DELETE",
+  });
+  if (!response.ok) throw new Error(`Vinkje niet opgeslagen (${response.status})`);
+}
+
 export async function fetchExamPrep(courseSlug: string): Promise<ExamPrep> {
   const query = new URLSearchParams({ course_slug: courseSlug });
   return handle(await fetch(`${API_BASE}/api/exam-prep?${query}`, { cache: "no-store" }));

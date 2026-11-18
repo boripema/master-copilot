@@ -468,3 +468,14 @@ class Task(Base):
     # blijft. Eén gebruiker, kleine tabel: opruimen is niet nodig.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PlanTick(Base):
+    """Een afgevinkte stap uit `exams/voorbereiding.yml`. Stond eerst in de
+    browser, maar Safari wist die opslag na 7 dagen zonder bezoek (18 Nov 2026)."""
+
+    __tablename__ = "plan_ticks"
+
+    course_slug: Mapped[str] = mapped_column(String(64), primary_key=True)
+    step_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

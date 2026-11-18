@@ -8,10 +8,11 @@ from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Course
+from app.models import Course, PlanTick
 from app.schemas import (
     ExamFactsRead,
     ExamPrepRead,
@@ -59,6 +60,7 @@ def read_exam_prep(course_slug: Annotated[str, Query(min_length=1)], db: Session
             StudyExamRead(name=exam.name, date=exam.day, days_left=exam.days_left, source=exam.source)
             for exam in prep.later_exams
         ],
+        ticked=list(db.scalars(select(PlanTick.step_id).where(PlanTick.course_slug == course_slug))),
         facts=ExamFactsRead(**prep.facts.model_dump()) if prep.facts is not None else None,
         total_points=prep.total_points,
         minutes_per_point=prep.minutes_per_point,
@@ -96,3 +98,20 @@ def read_exam_prep(course_slug: Annotated[str, Query(min_length=1)], db: Session
         plan=[PrepPlanStepRead(**step.model_dump()) for step in prep.plan],
         problems=prep.problems,
     )
+
+
+@router.put("/ticks/{step_id}", status_code=204)
+def tick_step(step_id: str, course_slug: Annotated[str, Query(min_length=1)], db: Session = Depends(get_db)) -> None:
+    if db.get(Course, course_slug) is None:
+        raise HTTPException(status_code=404, detail=f"Onbekend vak: {course_slug}")
+    if db.get(PlanTick, (course_slug, step_id)) is None:
+        db.add(PlanTick(course_slug=course_slug, step_id=step_id))
+        db.commit()
+
+
+@router.delete("/ticks/{step_id}", status_code=204)
+def untick_step(step_id: str, course_slug: Annotated[str, Query(min_length=1)], db: Session = Depends(get_db)) -> None:
+    tick = db.get(PlanTick, (course_slug, step_id))
+    if tick is not None:
+        db.delete(tick)
+        db.commit()

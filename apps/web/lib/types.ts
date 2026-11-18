@@ -826,6 +826,7 @@ export type ExamPrep = {
   exam: StudyExam | null;
   /** De tentamens na `exam`, vroegste eerst. */
   later_exams: StudyExam[];
+  ticked: string[];
   facts: ExamFacts | null;
   total_points: number | null;
   minutes_per_point: number | null;

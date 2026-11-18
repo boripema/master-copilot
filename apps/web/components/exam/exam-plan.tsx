@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { LinkChips } from "@/components/ui/link-chips";
+import { setPlanTick } from "@/lib/api";
 import { minutesLeft, planDays, stepDone, stepProgress } from "@/lib/exam-plan";
 import type { ExamPrep, PrepPlanStep } from "@/lib/types";
 
@@ -14,47 +15,29 @@ function duration(minutes: number): string {
   return rest === 0 ? `${hours} u` : `${hours} u ${rest} min`;
 }
 
-// Je vinkjes zijn een gemak voor jou op dit apparaat, geen administratie: wat
-// echt telt (je pogingen) staat in de database, en een oefententamen vinkt
-// zichzelf af. Zonder opslag (privévenster) werkt het blok gewoon, alleen
-// zonder geheugen.
-function storageKey(courseSlug: string) {
-  return `tentamen-plan:${courseSlug}`;
-}
-
-function readTicked(courseSlug: string): Set<string> {
-  try {
-    const raw = window.localStorage.getItem(storageKey(courseSlug));
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function writeTicked(courseSlug: string, ticked: Set<string>) {
-  try {
-    window.localStorage.setItem(storageKey(courseSlug), JSON.stringify([...ticked]));
-  } catch {
-    // Geen opslag: het vinkje geldt dan alleen tot je de pagina verlaat.
-  }
-}
-
-
 /** Wat je nog doet tot het tentamen, per dag en in volgorde, met bij elke stap
  * een knop naar de stof. Bovenaan de pagina, want dit is waarvoor je hier komt;
  * de rest van de pagina is waar de stappen naartoe wijzen. */
 export function ExamPlan({ prep }: { prep: ExamPrep }) {
-  const [ticked, setTicked] = useState<Set<string>>(new Set());
-  // Na het laden lezen, niet tijdens de render: de server kent je vinkjes niet.
-  useEffect(() => setTicked(readTicked(prep.course_slug)), [prep.course_slug]);
+  // Je vinkjes staan in de database: de browser wist zijn eigen opslag soms
+  // (Safari na 7 dagen zonder bezoek). Een oefententamen vinkt zichzelf af.
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set(prep.ticked));
+  const [error, setError] = useState<string | null>(null);
+
+  function flip(current: Set<string>, id: string): Set<string> {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  }
 
   function toggle(step: PrepPlanStep) {
-    setTicked((current) => {
-      const next = new Set(current);
-      if (next.has(step.id)) next.delete(step.id);
-      else next.add(step.id);
-      writeTicked(prep.course_slug, next);
-      return next;
+    const done = !ticked.has(step.id);
+    setTicked((current) => flip(current, step.id));
+    setError(null);
+    setPlanTick(prep.course_slug, step.id, done).catch(() => {
+      setTicked((current) => flip(current, step.id));
+      setError("Vinkje niet opgeslagen. Draait de API?");
     });
   }
 
@@ -88,6 +71,11 @@ export function ExamPlan({ prep }: { prep: ExamPrep }) {
         In deze volgorde. Vink af wat je gedaan hebt; een oefententamen vinkt zichzelf af zodra elke vraag een poging
         heeft.
       </p>
+      {error && (
+        <p role="alert" className="mt-1 text-sm text-rose-700">
+          {error}
+        </p>
+      )}
 
       <div className="mt-3 space-y-5">
         {planDays(prep.plan).map(({ day, steps }) => (
